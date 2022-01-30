@@ -24,7 +24,6 @@ md5sums=('c8d730a94371b65d6c88a08e6f5b98cf'
          'ce6c81ad1ad1f8b333fd6077d47abdaf'
          '3dc88030a8f2f5a5f97266d99b149f77')
 
-noextract=("odroid-${_srcver}.zip")
 
 prepare() {
   cd ${_srcname}
