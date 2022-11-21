@@ -1,0 +1,568 @@
+diff -crB linux-6.1-rc6/arch/arm/boot/dts/exynos5422-odroidxu4.dts linux-6.1-rc6-dts/arch/arm/boot/dts/exynos5422-odroidxu4.dts
+*** linux-6.1-rc6/arch/arm/boot/dts/exynos5422-odroidxu4.dts	Mon Nov 21 03:02:16 2022
+--- linux-6.1-rc6-dts/arch/arm/boot/dts/exynos5422-odroidxu4.dts	Tue Dec 17 14:02:52 2019
+***************
+*** 9,32 ****
+   */
+  
+  /dts-v1/;
+- #include <dt-bindings/leds/common.h>
+  #include <dt-bindings/sound/samsung-i2s.h>
+  #include "exynos5422-odroidxu3-common.dtsi"
+  
+  / {
+  	model = "Hardkernel Odroid XU4";
+  	compatible = "hardkernel,odroid-xu4", "samsung,exynos5800", \
+  		     "samsung,exynos5";
+  
+! 	led-controller {
+  		compatible = "pwm-leds";
+  
+! 		led-1 {
+! 			function = LED_FUNCTION_HEARTBEAT;
+! 			color = <LED_COLOR_ID_BLUE>;
+  			pwms = <&pwm 2 2000000 0>;
+  			pwm-names = "pwm2";
+! 			max-brightness = <255>;
+  			linux,default-trigger = "heartbeat";
+  		};
+  	};
+--- 9,31 ----
+   */
+  
+  /dts-v1/;
+  #include <dt-bindings/sound/samsung-i2s.h>
+  #include "exynos5422-odroidxu3-common.dtsi"
++ #include <dt-bindings/gpio/gpio.h>
+  
+  / {
+  	model = "Hardkernel Odroid XU4";
+  	compatible = "hardkernel,odroid-xu4", "samsung,exynos5800", \
+  		     "samsung,exynos5";
+  
+! 	pwmleds {
+  		compatible = "pwm-leds";
+  
+! 		blueled {
+! 			label = "blue:heartbeat";
+  			pwms = <&pwm 2 2000000 0>;
+  			pwm-names = "pwm2";
+! 			max_brightness = <255>;
+  			linux,default-trigger = "heartbeat";
+  		};
+  	};
+***************
+*** 37,42 ****
+--- 36,65 ----
+  
+  		samsung,audio-routing = "I2S Playback", "Mixer DAI TX";
+  
++ 		assigned-clocks = <&clock CLK_MOUT_EPLL>,
++ 				<&clock CLK_MOUT_MAU_EPLL>,
++ 				<&clock CLK_MOUT_USER_MAU_EPLL>,
++ 				<&clock_audss EXYNOS_MOUT_AUDSS>,
++ 				<&clock_audss EXYNOS_MOUT_I2S>,
++ 				<&clock_audss EXYNOS_DOUT_SRP>,
++ 				<&clock_audss EXYNOS_DOUT_AUD_BUS>,
++ 				<&clock_audss EXYNOS_DOUT_I2S>;
++ 
++ 		assigned-clock-parents = <&clock CLK_FOUT_EPLL>,
++ 				<&clock CLK_MOUT_EPLL>,
++ 				<&clock CLK_MOUT_MAU_EPLL>,
++ 				<&clock CLK_MAU_EPLL>,
++ 				<&clock_audss EXYNOS_MOUT_AUDSS>;
++ 
++ 		assigned-clock-rates = <0>,
++ 				<0>,
++ 				<0>,
++ 				<0>,
++ 				<0>,
++ 				<196608001>,
++ 				<(196608002 / 2)>,
++ 				<196608000>;
++ 
+  		cpu {
+  			sound-dai = <&i2s0 0>, <&i2s0 1>;
+  		};
+***************
+*** 45,81 ****
+  			sound-dai = <&hdmi>;
+  		};
+  	};
+  };
+  
+  &i2s0 {
+  	status = "okay";
+! 
+! 	assigned-clocks = <&clock CLK_MOUT_EPLL>,
+! 			  <&clock CLK_MOUT_MAU_EPLL>,
+! 			  <&clock CLK_MOUT_USER_MAU_EPLL>,
+! 			  <&clock_audss EXYNOS_MOUT_AUDSS>,
+! 			  <&clock_audss EXYNOS_MOUT_I2S>,
+! 			  <&i2s0 CLK_I2S_RCLK_SRC>,
+! 			  <&clock_audss EXYNOS_DOUT_SRP>,
+! 			  <&clock_audss EXYNOS_DOUT_AUD_BUS>,
+! 			  <&clock_audss EXYNOS_DOUT_I2S>;
+! 
+! 	assigned-clock-parents = <&clock CLK_FOUT_EPLL>,
+! 				 <&clock CLK_MOUT_EPLL>,
+! 				 <&clock CLK_MOUT_MAU_EPLL>,
+! 				 <&clock CLK_MAU_EPLL>,
+! 				 <&clock_audss EXYNOS_MOUT_AUDSS>,
+! 				 <&clock_audss EXYNOS_SCLK_I2S>;
+! 
+! 	assigned-clock-rates = <0>,
+! 			       <0>,
+! 			       <0>,
+! 			       <0>,
+! 			       <0>,
+! 			       <0>,
+! 			       <196608001>,
+! 			       <(196608002 / 2)>,
+! 			       <196608000>;
+  };
+  
+  &pwm {
+--- 68,129 ----
+  			sound-dai = <&hdmi>;
+  		};
+  	};
++ 
++ 	hktft35: hktft35 {
++ 		status = "disabled";
++ 		compatible = "odroid,hktft35";
++ 		pinctrl-names = "default";
++ 		pinctrl-0 = <&hktft35_pins>;
++ 
++ 		rotate = <270>;
++ 		bgr;
++ 		fps = <20>;
++ 		bpp = <16>;
++ 		reset-gpios = <&gpa0 3 GPIO_ACTIVE_HIGH>;
++ 		dc-gpios = <&gpx2 4 GPIO_ACTIVE_HIGH>;
++ 		wr-gpios = <&gpa2 5 GPIO_ACTIVE_HIGH>;
++ 		cs-gpios = <&gpa0 2 GPIO_ACTIVE_HIGH>;
++ 		led-gpios = <&gpx2 7 GPIO_ACTIVE_HIGH>;
++ 		db-gpios = <&gpx1 7 GPIO_ACTIVE_HIGH>,
++ 			   <&gpx2 0 GPIO_ACTIVE_HIGH>,
++ 			   <&gpx1 3 GPIO_ACTIVE_HIGH>,
++ 			   <&gpa2 4 GPIO_ACTIVE_HIGH>,
++ 			   <&gpa2 6 GPIO_ACTIVE_HIGH>,
++ 			   <&gpa2 7 GPIO_ACTIVE_HIGH>,
++ 			   <&gpx1 6 GPIO_ACTIVE_HIGH>,
++ 			   <&gpx1 5 GPIO_ACTIVE_HIGH>;
++ 		debug = <0>;
++ 
++ 		hktft35_pins: hktft35_pins {
++ 			samsung,pins = "gpa0-3", /* reset */
++ 				       "gpx2-4", /* dc */
++ 				       "gpa2-5", /* wr */
++ 				       "gpa0-2", /* cs */
++ 				       "gpx2-7", /* led */
++ 				       "gpx1-7", /* db00 */
++ 				       "gpx2-0", /* db01 */
++ 				       "gpx1-3", /* db02 */
++ 				       "gpa2-4", /* db03 */
++ 				       "gpa2-6", /* db04 */
++ 				       "gpa2-7", /* db05 */
++ 				       "gpx1-6", /* db06 */
++ 				       "gpx1-5"; /* db07 */
++ 			samsung,pin-function = <1>;
++ 		};
++ 	};
++ };
++ 
++ &clock_audss {
++ 	assigned-clocks = <&clock_audss EXYNOS_DOUT_SRP>,
++ 			  <&clock CLK_FOUT_EPLL>;
++ 	assigned-clock-rates = <(196608000 / 256)>,
++ 			       <196608000>;
+  };
+  
+  &i2s0 {
+  	status = "okay";
+! 	assigned-clocks = <&i2s0 CLK_I2S_RCLK_SRC>;
+! 	assigned-clock-parents = <&clock_audss EXYNOS_SCLK_I2S>;
+  };
+  
+  &pwm {
+***************
+*** 92,94 ****
+--- 140,232 ----
+  &usbdrd_dwc3_1 {
+  	dr_mode = "host";
+  };
++ 
++ /* i2c@12C70000 */
++ &i2c_1 {
++ 	status = "okay";
++ 	samsung,i2c-max-bus-freq = <400000>;
++ };
++ 
++ /* i2c@12cb0000 */
++ &hsi2c_5 {
++ 	status = "okay";
++ 	samsung,hs-mode;
++ 	clock-frequency = <400000>;
++ };
++ 
++ &spi_1 {
++ 	status = "okay";
++ 	samsung,spi-src-clk = <0>;
++ 	num-cs = <2>;
++ 	cs-gpios = <&gpa2 5 GPIO_ACTIVE_HIGH>, <&gpx2 1 GPIO_ACTIVE_HIGH>;
++ 
++ 	spidev: spidev@0 {
++ 		status = "okay";
++ 		reg = <0>;
++ 		compatible = "odroid,spidev";
++ 		spi-max-frequency = <1000000>;
++ 
++ 		controller-data {
++ 			cs-gpio = <&gpa2 5 GPIO_ACTIVE_HIGH>;
++ 			samsung,spi-feedback-delay = <0>;
++ 		};
++ 	};
++ 
++ 	hktft_cs_ogst: hktft_cs_ogst@0 {
++ 		status = "disabled";
++ 		compatible = "odroid,hktft32";
++ 		reg = <0>;
++ 		pinctrl-names = "default";
++ 		pinctrl-0 = <&hktft_cs_ogst_pins>;
++ 
++ 		spi-max-frequency = <40000000>;
++ 		rotate = <270>;
++ 		bgr;
++ 		backlight;
++ 		fps = <20>;
++ 		bpp = <16>;
++ 		reset-gpios = <&gpx1 5 GPIO_ACTIVE_HIGH>;
++ 		dc-gpios = <&gpx1 6 GPIO_ACTIVE_HIGH>;
++ 		led-gpios = <&gpx1 2 GPIO_ACTIVE_HIGH>;
++ 		debug = <0>;
++ 
++ 		hktft_cs_ogst_pins: hktft_cs_ogst_pins {
++ 			samsung,pins = "gpx1-5", /* reset */
++ 				       "gpx1-6", /* dc */
++ 				       "gpx1-2"; /* led */
++ 		};
++ 
++ 		controller-data {
++ 			cs-gpio = <&gpa2 5 GPIO_ACTIVE_HIGH>;
++ 			samsung,spi-feedback-delay = <0>;
++ 		};
++ 	};
++ 
++ 	hktft32: hktft32@0 {
++ 		status = "disabled";
++ 		compatible = "odroid,hktft32";
++ 		reg = <0>;
++ 		pinctrl-names = "default";
++ 		pinctrl-0 = <&hktft32_pins>;
++ 
++ 		spi-max-frequency = <40000000>;
++ 		rotate = <90>;
++ 		bgr;
++ 		backlight;
++ 		fps = <20>;
++ 		bpp = <16>;
++ 		reset-gpios = <&gpx1 5 GPIO_ACTIVE_HIGH>;
++ 		dc-gpios = <&gpx1 6 GPIO_ACTIVE_HIGH>;
++ 		debug = <0>;
++ 
++ 		hktft32_pins: hktft32_pins {
++ 			samsung,pins = "gpx1-5", /* reset */
++ 				       "gpx1-6"; /* dc */
++ 		};
++ 
++ 		controller-data {
++ 			cs-gpio = <&gpa2 5 GPIO_ACTIVE_HIGH>;
++ 			samsung,spi-feedback-delay = <0>;
++ 		};
++ 	};
++ };
+diff -crB linux-6.1-rc6/scripts/dtc/include-prefixes/arm/exynos5422-odroidxu4.dts linux-6.1-rc6-dts/scripts/dtc/include-prefixes/arm/exynos5422-odroidxu4.dts
+*** linux-6.1-rc6/scripts/dtc/include-prefixes/arm/exynos5422-odroidxu4.dts	Mon Nov 21 03:02:16 2022
+--- linux-6.1-rc6-dts/scripts/dtc/include-prefixes/arm/exynos5422-odroidxu4.dts	Tue Dec 17 14:02:52 2019
+***************
+*** 9,32 ****
+   */
+  
+  /dts-v1/;
+- #include <dt-bindings/leds/common.h>
+  #include <dt-bindings/sound/samsung-i2s.h>
+  #include "exynos5422-odroidxu3-common.dtsi"
+  
+  / {
+  	model = "Hardkernel Odroid XU4";
+  	compatible = "hardkernel,odroid-xu4", "samsung,exynos5800", \
+  		     "samsung,exynos5";
+  
+! 	led-controller {
+  		compatible = "pwm-leds";
+  
+! 		led-1 {
+! 			function = LED_FUNCTION_HEARTBEAT;
+! 			color = <LED_COLOR_ID_BLUE>;
+  			pwms = <&pwm 2 2000000 0>;
+  			pwm-names = "pwm2";
+! 			max-brightness = <255>;
+  			linux,default-trigger = "heartbeat";
+  		};
+  	};
+--- 9,31 ----
+   */
+  
+  /dts-v1/;
+  #include <dt-bindings/sound/samsung-i2s.h>
+  #include "exynos5422-odroidxu3-common.dtsi"
++ #include <dt-bindings/gpio/gpio.h>
+  
+  / {
+  	model = "Hardkernel Odroid XU4";
+  	compatible = "hardkernel,odroid-xu4", "samsung,exynos5800", \
+  		     "samsung,exynos5";
+  
+! 	pwmleds {
+  		compatible = "pwm-leds";
+  
+! 		blueled {
+! 			label = "blue:heartbeat";
+  			pwms = <&pwm 2 2000000 0>;
+  			pwm-names = "pwm2";
+! 			max_brightness = <255>;
+  			linux,default-trigger = "heartbeat";
+  		};
+  	};
+***************
+*** 37,42 ****
+--- 36,65 ----
+  
+  		samsung,audio-routing = "I2S Playback", "Mixer DAI TX";
+  
++ 		assigned-clocks = <&clock CLK_MOUT_EPLL>,
++ 				<&clock CLK_MOUT_MAU_EPLL>,
++ 				<&clock CLK_MOUT_USER_MAU_EPLL>,
++ 				<&clock_audss EXYNOS_MOUT_AUDSS>,
++ 				<&clock_audss EXYNOS_MOUT_I2S>,
++ 				<&clock_audss EXYNOS_DOUT_SRP>,
++ 				<&clock_audss EXYNOS_DOUT_AUD_BUS>,
++ 				<&clock_audss EXYNOS_DOUT_I2S>;
++ 
++ 		assigned-clock-parents = <&clock CLK_FOUT_EPLL>,
++ 				<&clock CLK_MOUT_EPLL>,
++ 				<&clock CLK_MOUT_MAU_EPLL>,
++ 				<&clock CLK_MAU_EPLL>,
++ 				<&clock_audss EXYNOS_MOUT_AUDSS>;
++ 
++ 		assigned-clock-rates = <0>,
++ 				<0>,
++ 				<0>,
++ 				<0>,
++ 				<0>,
++ 				<196608001>,
++ 				<(196608002 / 2)>,
++ 				<196608000>;
++ 
+  		cpu {
+  			sound-dai = <&i2s0 0>, <&i2s0 1>;
+  		};
+***************
+*** 45,81 ****
+  			sound-dai = <&hdmi>;
+  		};
+  	};
+  };
+  
+  &i2s0 {
+  	status = "okay";
+! 
+! 	assigned-clocks = <&clock CLK_MOUT_EPLL>,
+! 			  <&clock CLK_MOUT_MAU_EPLL>,
+! 			  <&clock CLK_MOUT_USER_MAU_EPLL>,
+! 			  <&clock_audss EXYNOS_MOUT_AUDSS>,
+! 			  <&clock_audss EXYNOS_MOUT_I2S>,
+! 			  <&i2s0 CLK_I2S_RCLK_SRC>,
+! 			  <&clock_audss EXYNOS_DOUT_SRP>,
+! 			  <&clock_audss EXYNOS_DOUT_AUD_BUS>,
+! 			  <&clock_audss EXYNOS_DOUT_I2S>;
+! 
+! 	assigned-clock-parents = <&clock CLK_FOUT_EPLL>,
+! 				 <&clock CLK_MOUT_EPLL>,
+! 				 <&clock CLK_MOUT_MAU_EPLL>,
+! 				 <&clock CLK_MAU_EPLL>,
+! 				 <&clock_audss EXYNOS_MOUT_AUDSS>,
+! 				 <&clock_audss EXYNOS_SCLK_I2S>;
+! 
+! 	assigned-clock-rates = <0>,
+! 			       <0>,
+! 			       <0>,
+! 			       <0>,
+! 			       <0>,
+! 			       <0>,
+! 			       <196608001>,
+! 			       <(196608002 / 2)>,
+! 			       <196608000>;
+  };
+  
+  &pwm {
+--- 68,129 ----
+  			sound-dai = <&hdmi>;
+  		};
+  	};
++ 
++ 	hktft35: hktft35 {
++ 		status = "disabled";
++ 		compatible = "odroid,hktft35";
++ 		pinctrl-names = "default";
++ 		pinctrl-0 = <&hktft35_pins>;
++ 
++ 		rotate = <270>;
++ 		bgr;
++ 		fps = <20>;
++ 		bpp = <16>;
++ 		reset-gpios = <&gpa0 3 GPIO_ACTIVE_HIGH>;
++ 		dc-gpios = <&gpx2 4 GPIO_ACTIVE_HIGH>;
++ 		wr-gpios = <&gpa2 5 GPIO_ACTIVE_HIGH>;
++ 		cs-gpios = <&gpa0 2 GPIO_ACTIVE_HIGH>;
++ 		led-gpios = <&gpx2 7 GPIO_ACTIVE_HIGH>;
++ 		db-gpios = <&gpx1 7 GPIO_ACTIVE_HIGH>,
++ 			   <&gpx2 0 GPIO_ACTIVE_HIGH>,
++ 			   <&gpx1 3 GPIO_ACTIVE_HIGH>,
++ 			   <&gpa2 4 GPIO_ACTIVE_HIGH>,
++ 			   <&gpa2 6 GPIO_ACTIVE_HIGH>,
++ 			   <&gpa2 7 GPIO_ACTIVE_HIGH>,
++ 			   <&gpx1 6 GPIO_ACTIVE_HIGH>,
++ 			   <&gpx1 5 GPIO_ACTIVE_HIGH>;
++ 		debug = <0>;
++ 
++ 		hktft35_pins: hktft35_pins {
++ 			samsung,pins = "gpa0-3", /* reset */
++ 				       "gpx2-4", /* dc */
++ 				       "gpa2-5", /* wr */
++ 				       "gpa0-2", /* cs */
++ 				       "gpx2-7", /* led */
++ 				       "gpx1-7", /* db00 */
++ 				       "gpx2-0", /* db01 */
++ 				       "gpx1-3", /* db02 */
++ 				       "gpa2-4", /* db03 */
++ 				       "gpa2-6", /* db04 */
++ 				       "gpa2-7", /* db05 */
++ 				       "gpx1-6", /* db06 */
++ 				       "gpx1-5"; /* db07 */
++ 			samsung,pin-function = <1>;
++ 		};
++ 	};
++ };
++ 
++ &clock_audss {
++ 	assigned-clocks = <&clock_audss EXYNOS_DOUT_SRP>,
++ 			  <&clock CLK_FOUT_EPLL>;
++ 	assigned-clock-rates = <(196608000 / 256)>,
++ 			       <196608000>;
+  };
+  
+  &i2s0 {
+  	status = "okay";
+! 	assigned-clocks = <&i2s0 CLK_I2S_RCLK_SRC>;
+! 	assigned-clock-parents = <&clock_audss EXYNOS_SCLK_I2S>;
+  };
+  
+  &pwm {
+***************
+*** 92,94 ****
+--- 140,232 ----
+  &usbdrd_dwc3_1 {
+  	dr_mode = "host";
+  };
++ 
++ /* i2c@12C70000 */
++ &i2c_1 {
++ 	status = "okay";
++ 	samsung,i2c-max-bus-freq = <400000>;
++ };
++ 
++ /* i2c@12cb0000 */
++ &hsi2c_5 {
++ 	status = "okay";
++ 	samsung,hs-mode;
++ 	clock-frequency = <400000>;
++ };
++ 
++ &spi_1 {
++ 	status = "okay";
++ 	samsung,spi-src-clk = <0>;
++ 	num-cs = <2>;
++ 	cs-gpios = <&gpa2 5 GPIO_ACTIVE_HIGH>, <&gpx2 1 GPIO_ACTIVE_HIGH>;
++ 
++ 	spidev: spidev@0 {
++ 		status = "okay";
++ 		reg = <0>;
++ 		compatible = "odroid,spidev";
++ 		spi-max-frequency = <1000000>;
++ 
++ 		controller-data {
++ 			cs-gpio = <&gpa2 5 GPIO_ACTIVE_HIGH>;
++ 			samsung,spi-feedback-delay = <0>;
++ 		};
++ 	};
++ 
++ 	hktft_cs_ogst: hktft_cs_ogst@0 {
++ 		status = "disabled";
++ 		compatible = "odroid,hktft32";
++ 		reg = <0>;
++ 		pinctrl-names = "default";
++ 		pinctrl-0 = <&hktft_cs_ogst_pins>;
++ 
++ 		spi-max-frequency = <40000000>;
++ 		rotate = <270>;
++ 		bgr;
++ 		backlight;
++ 		fps = <20>;
++ 		bpp = <16>;
++ 		reset-gpios = <&gpx1 5 GPIO_ACTIVE_HIGH>;
++ 		dc-gpios = <&gpx1 6 GPIO_ACTIVE_HIGH>;
++ 		led-gpios = <&gpx1 2 GPIO_ACTIVE_HIGH>;
++ 		debug = <0>;
++ 
++ 		hktft_cs_ogst_pins: hktft_cs_ogst_pins {
++ 			samsung,pins = "gpx1-5", /* reset */
++ 				       "gpx1-6", /* dc */
++ 				       "gpx1-2"; /* led */
++ 		};
++ 
++ 		controller-data {
++ 			cs-gpio = <&gpa2 5 GPIO_ACTIVE_HIGH>;
++ 			samsung,spi-feedback-delay = <0>;
++ 		};
++ 	};
++ 
++ 	hktft32: hktft32@0 {
++ 		status = "disabled";
++ 		compatible = "odroid,hktft32";
++ 		reg = <0>;
++ 		pinctrl-names = "default";
++ 		pinctrl-0 = <&hktft32_pins>;
++ 
++ 		spi-max-frequency = <40000000>;
++ 		rotate = <90>;
++ 		bgr;
++ 		backlight;
++ 		fps = <20>;
++ 		bpp = <16>;
++ 		reset-gpios = <&gpx1 5 GPIO_ACTIVE_HIGH>;
++ 		dc-gpios = <&gpx1 6 GPIO_ACTIVE_HIGH>;
++ 		debug = <0>;
++ 
++ 		hktft32_pins: hktft32_pins {
++ 			samsung,pins = "gpx1-5", /* reset */
++ 				       "gpx1-6"; /* dc */
++ 		};
++ 
++ 		controller-data {
++ 			cs-gpio = <&gpa2 5 GPIO_ACTIVE_HIGH>;
++ 			samsung,spi-feedback-delay = <0>;
++ 		};
++ 	};
++ };
